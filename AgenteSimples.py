@@ -3,35 +3,24 @@ import matplotlib.pyplot as plt
 
 
 def criar_ambiente():
-    # Variável que define o tamanho do ambiente
-    tamanho = 6
-    # Criação do ambiente com o tamanho definido
+    global tamanho
+    tamanho = 8
     ambiente = np.zeros((tamanho, tamanho))
 
-    # Adicionando paredes ao ambiente
-    # Valor : é utilizado para alterar o valor da coluna ou linha por completo
     ambiente[0, :] = 1
     ambiente[:, 0] = 1
-    # Valor -1 é utilizado para representar a última linha ou coluna da matriz
     ambiente[-1, :] = 1
     ambiente[:, -1] = 1
 
-    # Calcula a área disponível para sujeira
     area_disponivel = (tamanho - 2) ** 2
-    # Define a porcentagem de sujeira (75%)
     porcentagem_sujeira = 0.75
-    # Calcula o número de sujeiras a serem adicionadas
     num_sujeiras = int(area_disponivel * porcentagem_sujeira)
-
-    # Repete o loop até que a quantidade de sujeiras seja atingida
+    
     while np.sum(ambiente == 2) < num_sujeiras:
-        # Gera coordenadas aleatórias para a sujeira
         x, y = np.random.randint(1, tamanho - 1), np.random.randint(1, tamanho - 1)
-        # Verifica se a posição já não contém sujeira
         if ambiente[x, y] != 2:
             ambiente[x, y] = 2
     return ambiente
-
 
 def exibir(matriz, posicao):
     plt.imshow(matriz, cmap="nipy_spectral")
@@ -40,99 +29,85 @@ def exibir(matriz, posicao):
     plt.pause(1)
     plt.clf()
 
-
-def funcaoMapear(posicao, direcao):
+def funcaoMapear(posicao, caminhoReverso):
     x, y = posicao
+    if not caminhoReverso:
+        if x % 2 == 1:
+            if y < tamanho - 2:  
+                return 'direita', caminhoReverso
+            elif x < tamanho - 2: 
+                return 'abaixo', caminhoReverso
+        else:  
+            if y > 1:  
+                return 'esquerda', caminhoReverso
+            elif x < tamanho - 2:  
+                return 'abaixo', caminhoReverso
+    else:
+        if x % 2 == 1:
+            if y > 1:  
+                return 'esquerda', caminhoReverso
+            elif x > 1: 
+                return 'acima', caminhoReverso
+        else:  
+            if y < tamanho - 2:  
+                return 'direita', caminhoReverso
+            elif x > 1:  
+                return 'acima', caminhoReverso
+    return 'parado', caminhoReverso  
 
-    if direcao == "direita":
-        if y < 4:  # Move para a direita se não estiver na borda
-            return (x, y + 1), "direita"
-        elif x < 4:  # Move para baixo ao atingir a borda direita
-            return (x + 1, y), "esquerda"
-    elif direcao == "esquerda":
-        if y > 1:  # Move para a esquerda se não estiver na borda
-            return (x, y - 1), "esquerda"
-        elif x < 4:  # Move para baixo ao atingir a borda esquerda
-            return (x + 1, y), "direita"
-    elif direcao == "subindo":
-        if y < 4:  # Move para a direita enquanto sobe
-            return (x, y + 1), "subindo"
-        elif x > 1:  # Move para cima ao atingir a borda direita
-            return (x - 1, y), "descendo"
-    elif direcao == "descendo":
-        if y > 1:  # Move para a esquerda enquanto desce
-            return (x, y - 1), "descendo"
-        elif x > 1:  # Move para cima ao atingir a borda esquerda
-            return (x - 1, y), "subindo"
 
-    return posicao, direcao  # Retorna a mesma posição se não houver movimento possível
-
-
-def agenteReativoSimples(percepcao):
+def agenteReativoSimples(percepcao, caminhoReverso):
     posicao, status = percepcao
-    chegou_ao_limite = False  # Inicializa o estado de chegada ao limite
-
-    if status == "sujo":
-        return "aspirar"  # Aspira se a célula estiver suja
-
-    # Verifica se chegou ao fundo ou ao topo
-    if posicao[0] == 4 and posicao[1] == 1 and not chegou_ao_limite:
-        chegou_ao_limite = True  # Marca que chegou ao fundo
-        direcao = "subindo"  # Altera a direção para subir
-
-    # Mapeia a próxima posição e direção
-    nova_posicao, nova_direcao = funcaoMapear(posicao, direcao)
-
-    # Determina a ação com base na nova posição
-    if nova_posicao[0] > posicao[0]:
-        return "abaixo"
-    elif nova_posicao[0] < posicao[0]:
-        return "acima"
-    elif nova_posicao[1] > posicao[1]:
-        return "direita"
-    elif nova_posicao[1] < posicao[1]:
-        return "esquerda"
-    return "parado"  # Caso não haja movimento possível (não esperado)
-
+    
+    if status == 'sujo':
+        return 'aspirar', caminhoReverso
+    
+    return funcaoMapear(posicao, caminhoReverso)
 
 def ambiente_limpo(ambiente):
-    # Verifica se não há mais sujeira no ambiente
-    return not np.any(
-        ambiente == 2
-    )  # Retorna True se não houver células com valor 2 (sujeira)
+    return not np.any(ambiente == 2)
 
-
-def simular_agente():
+def main():
     ambiente = criar_ambiente()
     tamanho = ambiente.shape[0]
-    print(tamanho)
-    # Define uma posição inicial aleatória dentro do ambiente (não nas paredes)
     posicao = (np.random.randint(1, tamanho - 1), np.random.randint(1, tamanho - 1))
-
-    while not ambiente_limpo(ambiente):  # Continua enquanto houver sujeira no ambiente
+    # posicao = (1,1)
+    nova_pos = posicao
+    caminhoReverso = False
+    while not ambiente_limpo(ambiente): 
+        if tamanho % 2 == 1:
+            if posicao[0] == (tamanho - 2) and posicao[1] == (tamanho - 2):
+                caminhoReverso = True
+        else:
+            if posicao[0] == (tamanho - 2) and posicao[1] == (1):
+                caminhoReverso = True
         status = "sujo" if ambiente[posicao] == 2 else "limpo"
-        acao = agenteReativoSimples((posicao, status))
-        nova_posicao = posicao  # Inicializa a nova posição como a atual
-        if acao == "aspirar":
-            ambiente[posicao] = 0  # Limpa a célula
-        elif acao == "acima" and posicao[0] > 1:
-            nova_posicao = (posicao[0] - 1, posicao[1])
-        elif acao == "abaixo" and posicao[0] < tamanho - 2:
-            nova_posicao = (posicao[0] + 1, posicao[1])
-        elif acao == "esquerda" and posicao[1] > 1:
-            nova_posicao = (posicao[0], posicao[1] - 1)
-        elif acao == "direita" and posicao[1] < tamanho - 2:
-            nova_posicao = (posicao[0], posicao[1] + 1)
+        acao, caminhoReverso = agenteReativoSimples((posicao, status), caminhoReverso)
+        if acao == 'aspirar':
+            ambiente[posicao] = 0
+        else:
+            x, y = posicao
+            if acao == 'direita':
+                nova_pos = (x, y + 1) 
+            elif acao == 'esquerda':
+                nova_pos = (x, y - 1)
+            elif acao == 'abaixo':
+                nova_pos = (x + 1, y)
+            elif acao == 'acima':
+                nova_pos = (x - 1, y)
 
-        # Atualiza a posição do agente
-        posicao = nova_posicao
+        posicao = nova_pos
         exibir(ambiente, posicao)
 
-    # Exibe o ambiente limpo ao final
     plt.imshow(ambiente, cmap="nipy_spectral")
     plt.title("Ambiente Limpo")
     plt.show()
 
+main()
 
-# Executa a simulação
-simular_agente()
+### 
+# Pergunta A: A sua solução é extensível para um mundo 3 x 3? E para um mundo 6 x 6? Explique sua resposta.
+# Resposta: Sim, O código foi desenvolvido de forma flexível, permitindo a criação do ambiente e o posicionamento do agente em qualquer tamanho de matriz e posição inicial. 
+# Portanto, a lógica de movimentação do agente se adapta a diferentes dimensões, tanto 3x3 quanto 6x6, sem necessidade de alterações no código, além do tamanho da matriz na função de criar_ambiente.
+###
+
