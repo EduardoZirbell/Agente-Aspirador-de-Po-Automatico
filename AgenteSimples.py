@@ -1,10 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-
 def criar_ambiente():
     global tamanho
-    tamanho = 8
+    tamanho = 6
     ambiente = np.zeros((tamanho, tamanho))
 
     ambiente[0, :] = 1
@@ -13,7 +12,7 @@ def criar_ambiente():
     ambiente[:, -1] = 1
 
     area_disponivel = (tamanho - 2) ** 2
-    porcentagem_sujeira = 0.75
+    porcentagem_sujeira = 0.50
     num_sujeiras = int(area_disponivel * porcentagem_sujeira)
     
     while np.sum(ambiente == 2) < num_sujeiras:
@@ -26,7 +25,7 @@ def exibir(matriz, posicao):
     plt.imshow(matriz, cmap="nipy_spectral")
     plt.plot([posicao[1]], [posicao[0]], marker="o", color="r", ls="")
     plt.show(block=False)
-    plt.pause(1)
+    plt.pause(0.2)
     plt.clf()
 
 def funcaoMapear(posicao, caminhoReverso):
